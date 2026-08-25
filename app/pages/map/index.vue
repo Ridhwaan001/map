@@ -95,7 +95,7 @@
   </div>
 
   <div class="box" v-show="!showWindow">
-    <UButton @click="navigateTo(`/`)" icon="lucide:house" />
+    <UButton @click="navigateTo(`/`)" icon="lucide:arrow-left" />
     &nbsp;
     <UButton @click="toggleDisplay" icon="lucide:plus" />
   </div>
@@ -135,9 +135,6 @@ const showWindow = ref<boolean>(false);
 // https://www.geoapify.com/places-api/ (3000 free credits daily omg)
 
 async function getLocations() {
-  // let aa = await $fetch(
-  //   `https://api.geoapify.com/v1/geocode/autocomplete?text=${searchField.value}&limit=5&format=json&apiKey=95eb12e4b793485bb534f5ec60a8686a`,
-  // );
   let aa = await $fetch(
     `/api/search/search?text=${encodeURIComponent(searchField.value)}`,
   );

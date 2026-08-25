@@ -4,6 +4,7 @@
 .nuxt
 .nitro
 .cache
+.vscode
 dist
 
 # Node dependencies
@@ -24,3 +25,4 @@ logs
 !.env.example
 
 *.db
+temp.txt
