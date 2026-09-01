@@ -5,22 +5,55 @@
       attribution='&amp;copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
       layer-type="base"
       name="OpenStreetMap" />
-    <LMarker
-      :lat-lng="[item.latitude, item.longitude]"
-      v-for="item in existingPlaces">
-      <LPopup> {{ item.pos }}. {{ item.name }} </LPopup>
-    </LMarker>
-    <template v-for="(item, i) in existingPlaces">
-      <LPolyline
-        v-if="i !== existingPlaces.length - 1"
-        :lat-lngs="[
-          [item.latitude, item.longitude],
-          [
-            (existingPlaces[i + 1] as placeData).latitude,
-            (existingPlaces[i + 1] as placeData).longitude,
-          ],
-        ]" />
-    </template>
+    <LTileLayer
+      url="https://tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png"
+      attribution='<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>, Style: <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA 2.0</a> <a href="http://www.openrailwaymap.org/">OpenRailwayMap</a> and OpenStreetMap'
+      :min-zoom="2"
+      :max-zoom="19"
+      :tile-size="256"
+      :layer-type="'base'"
+      name="Railway map" />
+    <LControlLayers position="topright" />
+    <LLayerGroup name="Your places" :layer-type="'overlay'">
+      <LMarker
+        :lat-lng="[item.latitude, item.longitude]"
+        v-for="item in existingPlaces">
+        <LPopup> {{ item.pos }}. {{ item.name }} </LPopup>
+      </LMarker>
+    </LLayerGroup>
+
+    <LLayerGroup name="Connect your places" :layer-type="'overlay'">
+      <template v-for="(item, i) in existingPlaces">
+        <LPolyline
+          v-if="i !== existingPlaces.length - 1"
+          :lat-lngs="[
+            [item.latitude, item.longitude],
+            [
+              (existingPlaces[i + 1] as placeData).latitude,
+              (existingPlaces[i + 1] as placeData).longitude,
+            ],
+          ]" />
+      </template>
+    </LLayerGroup>
+    <LFeatureGroup
+      name="Service stations"
+      :layer-type="'overlay'"
+      attribution='Service station data provided by <a href="https://git.alifeee.net/service-stations/about/">alifeee.net</a>'
+      :visible="false">
+      <template v-for="(item, i) in servicestations">
+        <LMarker
+          :lat-lng="[
+            item.geometry.coordinates[1],
+            item.geometry.coordinates[0],
+          ]">
+          <LPopup>
+            <b>{{ item.properties.name }}</b
+            ><br />
+            Service station
+          </LPopup>
+        </LMarker>
+      </template>
+    </LFeatureGroup>
   </LMap>
 
   <div class="box" v-show="showWindow">
@@ -30,6 +63,7 @@
       /></template>
 
       <h1>Add a location</h1>
+      {{ servicestations[0] }}
       <br />
       <UFormField label="Search">
         <UInput placeholder="Search here..." v-model="searchField" />
@@ -42,7 +76,7 @@
 
       <div class="results">
         <template v-for="item in addLocationAutofill">
-          <UCard>
+          <UCard v-if="item.name && item.lat && item.lon">
             <h3>{{ item.name }}</h3>
             {{ item.street }}
             <br />
@@ -114,6 +148,9 @@ const existingPlaces = ref<Array<placeData>>([]);
 
 existingPlaces.value = await $fetch("/api/places/get");
 
+const servicestations = ref<Array<geojsonfeature>>([]);
+servicestations.value = await $fetch("/api/places/getservices");
+
 let copyToDoMathsIdk = existingPlaces.value;
 
 if (copyToDoMathsIdk.length !== 0) {
@@ -173,6 +210,7 @@ async function addLocation(location: any) {
     "existingPlaces",
     "searchField",
     "addLocationAutofill",
+    "servicestations",
   ]);
 
   toast.add({
@@ -266,6 +304,19 @@ interface placeData {
   longitude: number;
   latitude: number;
   pos: number;
+}
+
+interface geojsonfeature {
+  type: "Feature";
+  geometry: {
+    type: "Point";
+    coordinates: [number, number];
+  };
+  properties: {
+    name: string;
+    postcode: string;
+    URL: string;
+  };
 }
 </script>
 
